@@ -5,9 +5,14 @@
 export type NavItem = {
   label: string;
   href: string;
+  /** 未読のアプリ内通知の件数バッジを表示する項目に指定する。 */
+  showsNotificationBadge?: boolean;
 };
 
-export const NAV_ITEMS: readonly NavItem[] = [{ label: "ホーム", href: "/" }];
+export const NAV_ITEMS: readonly NavItem[] = [
+  { label: "ホーム", href: "/" },
+  { label: "タイムライン", href: "/timeline", showsNotificationBadge: true },
+];
 
 /**
  * 現在のパスが対象の項目を指しているかを判定する。
