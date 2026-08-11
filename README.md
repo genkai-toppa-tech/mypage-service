@@ -48,12 +48,16 @@ pnpm dev
 ```text
 app/
   layout.tsx        ルートレイアウト（フォント・メタデータ）
+  not-found.tsx     404ページ（存在しないURLへのアクセス時）
   globals.css       Tailwind / shadcn のテーマトークン
   (main)/
     layout.tsx      サイドメニュー付きレイアウト
     page.tsx        ホーム画面（/）
 components/
-  layout/           サイドメニューなどレイアウト用コンポーネント
+  layout/
+    AppShell.tsx    サイドメニュー＋メインエリアの共通シェル
+    Sidebar.tsx     サイドメニュー本体
+    SidebarNav.tsx  ナビ項目・現在地ハイライト
   ui/               shadcn/ui のコンポーネント（追加時に生成）
 lib/
   navigation.ts     サイドメニュー項目の定義
