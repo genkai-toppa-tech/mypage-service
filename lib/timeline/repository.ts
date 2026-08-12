@@ -1,6 +1,3 @@
-import { MOCK_SEED_POSTS } from "@/lib/mock/posts";
-import { MOCK_USERS } from "@/lib/mock/users";
-import { createEveryoneNotifications } from "@/lib/notifications/store";
 import { containsEveryoneMention } from "@/lib/timeline/mentions";
 import type { Post, PostCursor, PostPage, User } from "@/lib/timeline/types";
 import { validatePostBody } from "@/lib/timeline/validation";
@@ -13,7 +10,7 @@ export type ListPostsParams = {
 
 /**
  * つぶやきの永続化層。
- * 認証基盤の導入 (#12) 後は、このインターフェースを満たす Supabase 実装に差し替える。
+ * posts テーブルの導入後は、このインターフェースを満たす Supabase 実装に差し替える。
  */
 export interface PostRepository {
   listPosts(params: ListPostsParams): Promise<PostPage>;
@@ -198,20 +195,3 @@ export function createInMemoryPostRepository(options: {
     },
   };
 }
-
-/**
- * アプリから参照する実体。
- * TODO(#12): 認証基盤の導入後、Supabase 実装に差し替え、モックの読み込みを削除する。
- */
-export const postRepository: PostRepository = createInMemoryPostRepository({
-  users: MOCK_USERS,
-  seedPosts: MOCK_SEED_POSTS,
-  onEveryoneMention: (post) => {
-    createEveryoneNotifications({
-      postId: post.id,
-      authorId: post.author.id,
-      recipientIds: MOCK_USERS.map((user) => user.id),
-      createdAt: post.createdAt,
-    });
-  },
-});

@@ -3,10 +3,15 @@
  * DB設計（Issue #1 の設計案）と対応させている。
  */
 
-/** 投稿者。認証基盤の導入後は profiles テーブルの1行に対応する。 */
+/**
+ * 投稿者。profiles テーブルの1行のうち、タイムラインの表示に必要な分だけを持つ。
+ * `lib/auth/types.ts` の `Profile` はこの形を満たすため、そのまま渡せる。
+ */
 export type User = {
   id: string;
   displayName: string;
+  /** Discord のアバター画像URL。未取得・未設定の場合は null。 */
+  avatarUrl?: string | null;
 };
 
 /** つぶやき1件。論理削除済みの投稿は取得結果に含めないため deletedAt は持たせない。 */

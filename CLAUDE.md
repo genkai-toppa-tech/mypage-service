@@ -34,7 +34,11 @@
 
 - `app/` — Next.js App Router のルーティング
 - `components/` — 再利用可能なUIコンポーネント
-- `lib/supabase/` — Supabaseクライアント初期化、DB操作のラッパー関数
+- `lib/supabase/` — Supabaseクライアント初期化（`client` / `server` / `proxy`）、生成した型
+- `lib/auth/` — ログイン中ユーザーの取得、リダイレクト先の解決
+- `lib/db/schema.ts` — DBスキーマの一次情報源（Drizzle）
+- `drizzle/` — 生成されたマイグレーションSQL。手で新規ファイルを作らずコマンドで生成する
+- `proxy.ts`（リポジトリ直下） — セッション更新と未ログイン時のリダイレクト。**Next.js 16 で `middleware` からリネームされたため `middleware.ts` は使わない**
 - `docs/requirements.md` — サービス構想書（要件定義の一次情報源）
 - 機能追加時は既存のディレクトリ構造・命名パターンに合わせること。新しい構造パターンを導入する場合はPRの説明で理由を明記する
 
@@ -44,8 +48,15 @@
 
 - ESLint / Prettier の設定に従う（リポジトリの設定ファイルを正とする）
 - コンポーネント名は PascalCase、関数・変数は camelCase
-- `any` 型の使用は避け、Supabaseの型は `supabase gen types typescript` で生成した型を使用する
+- `any` 型の使用は避け、Supabaseの型は `pnpm gen:types`（`supabase gen types typescript`）で生成した `lib/supabase/database.types.ts` を使用する。生成物はコミットする
 - サーバーコンポーネント／クライアントコンポーネントの使い分けを意識し、不要な `"use client"` を避ける
+
+### DBスキーマとマイグレーション
+
+- スキーマの一次情報源は `lib/db/schema.ts`（Drizzle）。ここを編集してから `pnpm drizzle-kit generate --name <名前>` でマイグレーションを生成する。**`drizzle/` 配下のSQLを手で新規作成しない**
+- トリガー・関数・列レベルのGRANT/REVOKEなど Drizzle のスキーマ定義で表現できないものは、`pnpm drizzle-kit generate --custom --name <名前>` で空のSQLファイルを作ってそこに書く
+- 適用は `pnpm drizzle-kit migrate`（`DATABASE_URL` が必要）
+- スキーマを変更したら `pnpm gen:types` で型を再生成してコミットする
 
 ---
 
@@ -99,3 +110,8 @@
 
 - `docs/requirements.md` — サービス構想書全文（背景・目的・9機能一覧・開発ステップ）
 - 本ファイル（CLAUDE.md） — 実装ルール・レビュー観点
+
+## 禁止事項
+
+- `main` ブランチへの直接コミットは禁止します
+- `package.json`の直接編集は禁止します（pnpm addコマンドで正規にインストールをしてください）

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 import { PostComposer } from "@/components/timeline/PostComposer";
 import { PostList } from "@/components/timeline/PostList";
-import { MOCK_CURRENT_USER } from "@/lib/mock/users";
+import type { Profile } from "@/lib/auth/types";
 import { markAllNotificationsAsRead } from "@/lib/notifications/store";
-import { postRepository } from "@/lib/timeline/repository";
+import { createInMemoryPostRepository } from "@/lib/timeline/repository";
 import type { Post, PostCursor } from "@/lib/timeline/types";
 
 /** 1回の読み込みで取得する件数。 */
@@ -16,7 +16,10 @@ function toMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function Timeline() {
+export function Timeline({ currentUser }: { currentUser: Profile }) {
+  // NOTE: posts テーブルの導入までは、投稿はこのブラウザのメモリ上にしか残らない。
+  // 投稿者はログイン中の本人だけなので、既知のユーザーも本人1名でよい。
+  const [repository] = useState(() => createInMemoryPostRepository({ users: [currentUser] }));
   const [posts, setPosts] = useState<readonly Post[]>([]);
   const [cursor, setCursor] = useState<PostCursor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +29,7 @@ export function Timeline() {
   useEffect(() => {
     let isActive = true;
 
-    postRepository
+    repository
       .listPosts({ limit: PAGE_SIZE })
       .then((page) => {
         if (!isActive) {
@@ -48,16 +51,16 @@ export function Timeline() {
       });
 
     // タイムラインを開いた時点で、自分宛の未読通知をすべて既読にする
-    markAllNotificationsAsRead(MOCK_CURRENT_USER.id, new Date().toISOString());
+    markAllNotificationsAsRead(currentUser.id, new Date().toISOString());
 
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [repository, currentUser.id]);
 
   async function handleCreate(body: string) {
-    const created = await postRepository.createPost({
-      authorId: MOCK_CURRENT_USER.id,
+    const created = await repository.createPost({
+      authorId: currentUser.id,
       body,
     });
 
@@ -65,9 +68,9 @@ export function Timeline() {
   }
 
   async function handleUpdate({ id, body }: { id: string; body: string }) {
-    const updated = await postRepository.updatePost({
+    const updated = await repository.updatePost({
       id,
-      authorId: MOCK_CURRENT_USER.id,
+      authorId: currentUser.id,
       body,
     });
 
@@ -75,7 +78,7 @@ export function Timeline() {
   }
 
   async function handleDelete({ id }: { id: string }) {
-    await postRepository.deletePost({ id, authorId: MOCK_CURRENT_USER.id });
+    await repository.deletePost({ id, authorId: currentUser.id });
 
     setPosts((current) => current.filter((post) => post.id !== id));
   }
@@ -89,7 +92,7 @@ export function Timeline() {
     setError(null);
 
     try {
-      const page = await postRepository.listPosts({ limit: PAGE_SIZE, cursor });
+      const page = await repository.listPosts({ limit: PAGE_SIZE, cursor });
 
       setPosts((current) => [...current, ...page.posts]);
       setCursor(page.nextCursor);
@@ -102,14 +105,14 @@ export function Timeline() {
 
   return (
     <div>
-      <PostComposer currentUser={MOCK_CURRENT_USER} onSubmit={handleCreate} />
+      <PostComposer currentUser={currentUser} onSubmit={handleCreate} />
 
       {isLoading ? (
         <p className="text-muted-foreground px-4 py-10 text-center text-sm">読み込み中...</p>
       ) : (
         <PostList
           posts={posts}
-          currentUserId={MOCK_CURRENT_USER.id}
+          currentUserId={currentUser.id}
           hasMore={cursor !== null}
           isLoadingMore={isLoadingMore}
           onLoadMore={handleLoadMore}

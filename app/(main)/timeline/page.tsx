@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { Timeline } from "@/components/timeline/Timeline";
+import { getCurrentUser } from "@/lib/auth/current-user";
 
 export const metadata: Metadata = {
   title: "タイムライン | 限界突破塾 マイページ",
 };
 
-export default function TimelinePage() {
+export default async function TimelinePage() {
+  const currentUser = await getCurrentUser();
+
+  if (currentUser === null) {
+    redirect("/login");
+  }
+
   return (
     <section className="mx-auto w-full max-w-2xl">
       <h1 className="text-2xl font-semibold">タイムライン</h1>
@@ -14,13 +22,13 @@ export default function TimelinePage() {
         日々の積み上げを共有する場所です。全員に知らせたいときは @everyone を付けて投稿します。
       </p>
 
-      {/* TODO(#12): 認証基盤の導入後、モックデータの注意書きを削除する */}
+      {/* 投稿データの Supabase 移行が済むまでの注意書き */}
       <p className="border-border text-muted-foreground mt-4 rounded-md border border-dashed px-3 py-2 text-xs">
-        現在はモックデータで動作しています。投稿はブラウザを再読み込みすると初期状態に戻ります。
+        投稿はまだ保存されません。ブラウザを再読み込みすると消えます。
       </p>
 
       <div className="border-border mt-6 overflow-hidden rounded-lg border">
-        <Timeline />
+        <Timeline currentUser={currentUser} />
       </div>
     </section>
   );
