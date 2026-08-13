@@ -13,7 +13,7 @@ type PostComposerProps = {
 export function PostComposer({ currentUser, onSubmit }: PostComposerProps) {
   return (
     <div className="border-border flex gap-3 border-b px-4 py-4">
-      <UserAvatar displayName={currentUser.displayName} />
+      <UserAvatar displayName={currentUser.displayName} avatarUrl={currentUser.avatarUrl} />
       <div className="min-w-0 flex-1">
         <PostForm
           label="つぶやきの本文"

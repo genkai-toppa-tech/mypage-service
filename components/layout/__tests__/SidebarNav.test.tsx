@@ -14,7 +14,7 @@ describe("SidebarNav", () => {
   it("NAV_ITEMS の項目をすべてリンクとして表示する", () => {
     usePathnameMock.mockReturnValue("/");
 
-    render(<SidebarNav />);
+    render(<SidebarNav currentUserId="u1" />);
 
     for (const item of NAV_ITEMS) {
       expect(screen.getByRole("link", { name: item.label })).toHaveAttribute("href", item.href);
@@ -24,7 +24,7 @@ describe("SidebarNav", () => {
   it('現在地のリンクに aria-current="page" を付与する', () => {
     usePathnameMock.mockReturnValue("/");
 
-    render(<SidebarNav />);
+    render(<SidebarNav currentUserId="u1" />);
 
     expect(screen.getByRole("link", { name: "ホーム" })).toHaveAttribute("aria-current", "page");
   });
@@ -32,7 +32,7 @@ describe("SidebarNav", () => {
   it("現在地でないリンクには aria-current を付与しない", () => {
     usePathnameMock.mockReturnValue("/timeline");
 
-    render(<SidebarNav />);
+    render(<SidebarNav currentUserId="u1" />);
 
     expect(screen.getByRole("link", { name: "ホーム" })).not.toHaveAttribute("aria-current");
   });

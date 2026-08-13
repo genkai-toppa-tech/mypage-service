@@ -37,7 +37,7 @@ export function PostCard({ post, currentUserId, onUpdate, onDelete }: PostCardPr
 
   return (
     <article className="border-border flex gap-3 border-b px-4 py-4">
-      <UserAvatar displayName={post.author.displayName} />
+      <UserAvatar displayName={post.author.displayName} avatarUrl={post.author.avatarUrl} />
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">

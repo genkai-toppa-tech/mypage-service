@@ -7,7 +7,7 @@ import { NotificationBadge } from "@/components/layout/NotificationBadge";
 import { isActiveNavItem, NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-export function SidebarNav() {
+export function SidebarNav({ currentUserId }: { currentUserId: string | null }) {
   const pathname = usePathname();
 
   return (
@@ -36,7 +36,10 @@ export function SidebarNav() {
               {/* リンクのアクセシブル名を項目名のままに保つため、バッジは Link の外に置く。
                   クリックはバッジを透過させ、リンク側で受け取る。 */}
               {item.showsNotificationBadge === true && (
-                <NotificationBadge className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2" />
+                <NotificationBadge
+                  userId={currentUserId}
+                  className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+                />
               )}
             </li>
           );

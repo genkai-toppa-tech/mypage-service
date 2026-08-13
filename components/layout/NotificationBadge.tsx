@@ -2,21 +2,27 @@
 
 import { useSyncExternalStore } from "react";
 
-// TODO(#12): 認証基盤の導入後、モック通知の読み込みを削除する
-import "@/lib/mock/notifications";
-import { MOCK_CURRENT_USER } from "@/lib/mock/users";
 import { getUnreadCount, subscribeNotifications } from "@/lib/notifications/store";
 import { cn } from "@/lib/utils";
 
 /**
  * 未読のアプリ内通知の件数バッジ。未読が無いときは何も表示しない。
- * TODO(#12): 認証基盤の導入後、ログイン中のユーザーIDを Supabase Auth から取得する。
+ *
+ * NOTE: 通知ストアはまだインメモリで、@everyone 投稿の通知は posts テーブルの
+ * 導入後に作られるようになる（投稿データの Supabase 移行Issue）。
+ * それまでは件数が 0 のままで、バッジは表示されない。
  */
-export function NotificationBadge({ className }: { className?: string }) {
+export function NotificationBadge({
+  userId,
+  className,
+}: {
+  userId: string | null;
+  className?: string;
+}) {
   const unreadCount = useSyncExternalStore(
     subscribeNotifications,
-    () => getUnreadCount(MOCK_CURRENT_USER.id),
-    () => getUnreadCount(MOCK_CURRENT_USER.id),
+    () => (userId === null ? 0 : getUnreadCount(userId)),
+    () => 0,
   );
 
   if (unreadCount === 0) {

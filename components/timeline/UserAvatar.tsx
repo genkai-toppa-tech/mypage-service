@@ -1,16 +1,33 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 /**
- * 表示名の頭文字によるアバター。
- * TODO(#12): Discord のアバター画像を profiles から取得できるようになったら画像表示に差し替える。
+ * ユーザーのアバター。
+ * Discord のアバター画像があればそれを表示し、無ければ表示名の頭文字で代替する。
  */
 export function UserAvatar({
   displayName,
+  avatarUrl = null,
   className,
 }: {
   displayName: string;
+  avatarUrl?: string | null;
   className?: string;
 }) {
+  if (avatarUrl !== null && avatarUrl !== "") {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        aria-hidden="true"
+        width={40}
+        height={40}
+        className={cn("bg-muted size-10 shrink-0 rounded-full object-cover", className)}
+      />
+    );
+  }
+
   return (
     <span
       aria-hidden="true"
