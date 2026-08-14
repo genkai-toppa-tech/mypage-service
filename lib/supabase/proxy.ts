@@ -36,11 +36,11 @@ export function buildLoginUrl(request: NextRequest): URL {
  * 別の NextResponse を作って返すとセッションが更新されず、ログインが不安定になる。
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
-  const { url, anonKey } = getSupabaseEnv();
+  const { url, publishableKey } = getSupabaseEnv();
 
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(url, anonKey, {
+  const supabase = createServerClient<Database>(url, publishableKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
