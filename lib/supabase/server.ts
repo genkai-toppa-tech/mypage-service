@@ -12,9 +12,9 @@ export async function createClient() {
   // cookies() を先に呼ぶ。ビルド時の静的生成では、この呼び出しによって
   // 「動的レンダリングが必要なページ」として扱われる（環境変数の検証より前に置く必要がある）
   const cookieStore = await cookies();
-  const { url, anonKey } = getSupabaseEnv();
+  const { url, publishableKey } = getSupabaseEnv();
 
-  return createServerClient<Database>(url, anonKey, {
+  return createServerClient<Database>(url, publishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
