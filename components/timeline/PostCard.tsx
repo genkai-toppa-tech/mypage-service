@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { PostBody } from "@/components/timeline/PostBody";
@@ -37,11 +38,15 @@ export function PostCard({ post, currentUserId, onUpdate, onDelete }: PostCardPr
 
   return (
     <article className="border-border flex gap-3 border-b px-4 py-4">
-      <UserAvatar displayName={post.author.displayName} avatarUrl={post.author.avatarUrl} />
+      <Link href={`/user/${post.author.id}`} aria-label={`${post.author.displayName}のマイページ`}>
+        <UserAvatar displayName={post.author.displayName} avatarUrl={post.author.avatarUrl} />
+      </Link>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-semibold">{post.author.displayName}</span>
+          <Link href={`/user/${post.author.id}`} className="text-sm font-semibold hover:underline">
+            {post.author.displayName}
+          </Link>
           <time dateTime={post.createdAt} className="text-muted-foreground text-xs">
             {formatRelativeTime(post.createdAt, new Date())}
           </time>

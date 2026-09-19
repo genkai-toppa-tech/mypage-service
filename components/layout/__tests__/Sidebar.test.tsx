@@ -21,7 +21,7 @@ describe("Sidebar", () => {
 
     expect(screen.getByRole("link", { name: "たくみのマイページ" })).toHaveAttribute(
       "href",
-      "/user",
+      "/user/u1",
     );
   });
 

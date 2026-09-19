@@ -42,6 +42,16 @@ describe("PostCard", () => {
     expect(screen.getByText("たった今")).toBeInTheDocument();
   });
 
+  it("投稿者名・アイコンから投稿者のマイページへ遷移できる", () => {
+    renderCard();
+
+    expect(screen.getByRole("link", { name: "いちろう" })).toHaveAttribute("href", "/user/u1");
+    expect(screen.getByRole("link", { name: "いちろうのマイページ" })).toHaveAttribute(
+      "href",
+      "/user/u1",
+    );
+  });
+
   it("編集済みの投稿にはその旨を表示する", () => {
     renderCard({ post: { ...post, updatedAt: new Date().toISOString() } });
 
