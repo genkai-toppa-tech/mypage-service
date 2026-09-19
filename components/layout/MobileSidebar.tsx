@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "radix-ui";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import { SidebarContent, SERVICE_NAME } from "@/components/layout/Sidebar";
 import type { Profile } from "@/lib/auth/types";
@@ -22,6 +23,12 @@ const MOBILE_MAX_WIDTH_PX = 767;
 export function MobileSidebar({ currentUser }: { currentUser: Profile | null }) {
   const [open, setOpen] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const pathname = usePathname();
+
+  // 別ページへ遷移したら、開きっぱなしにならないようドロワーを閉じる
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     function isMobileViewport() {

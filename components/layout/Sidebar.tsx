@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { UserAvatar } from "@/components/user/UserAvatar";
@@ -20,14 +22,18 @@ export function SidebarContent({ currentUser }: { currentUser: Profile | null })
 
       {currentUser !== null && (
         <div className="border-sidebar-border border-t px-3 py-3">
-          <div className="flex items-center gap-2 px-3 py-2">
+          <Link
+            href="/user"
+            aria-label={`${currentUser.displayName}のマイページ`}
+            className="hover:bg-sidebar-accent flex items-center gap-2 rounded-md px-3 py-2 transition-colors"
+          >
             <UserAvatar
               displayName={currentUser.displayName}
               avatarUrl={currentUser.avatarUrl}
               className="size-8"
             />
             <span className="min-w-0 truncate text-sm font-medium">{currentUser.displayName}</span>
-          </div>
+          </Link>
           <SignOutButton />
         </div>
       )}
