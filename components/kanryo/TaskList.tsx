@@ -1,16 +1,19 @@
 "use client";
 
 import { TaskCard } from "@/components/kanryo/TaskCard";
+import type { TaskLikes } from "@/lib/kanryo/likes";
 import type { KanryoTask } from "@/lib/kanryo/types";
 
 type TaskListProps = {
   tasks: readonly KanryoTask[];
   currentUserId: string;
   now: Date;
+  likes: TaskLikes;
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
   onComplete: (id: string) => Promise<void>;
+  onToggleLike: (id: string) => Promise<void>;
 };
 
 /** 新着順に並んだタスク一覧。追加読み込みは keyset カーソルで行う。 */
@@ -18,10 +21,12 @@ export function TaskList({
   tasks,
   currentUserId,
   now,
+  likes,
   hasMore,
   isLoadingMore,
   onLoadMore,
   onComplete,
+  onToggleLike,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return (
@@ -36,7 +41,14 @@ export function TaskList({
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>
-            <TaskCard task={task} currentUserId={currentUserId} now={now} onComplete={onComplete} />
+            <TaskCard
+              task={task}
+              currentUserId={currentUserId}
+              now={now}
+              likes={likes[task.id] ?? []}
+              onComplete={onComplete}
+              onToggleLike={onToggleLike}
+            />
           </li>
         ))}
       </ul>

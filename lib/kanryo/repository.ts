@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { computeDueAt, validateDueMinutes } from "@/lib/kanryo/due-at";
+import type { TaskLikes } from "@/lib/kanryo/likes";
 import type { KanryoTask, KanryoUser } from "@/lib/kanryo/types";
 import { validateTaskBody } from "@/lib/kanryo/validation";
 import { compareByCursorOrder, type Cursor } from "@/lib/pagination/cursor";
@@ -18,28 +19,60 @@ export type TaskPage = {
   tasks: KanryoTask[];
   /** 次ページが存在しない場合は null。 */
   nextCursor: TaskCursor | null;
+  /** 取得したタスクぶんの「いいね」。タスクの更新とは独立に管理する。 */
+  likes: TaskLikes;
 };
 
 /**
- * 完了の間の永続化層。kanryo_tasks テーブルに対する読み書きを行う。
+ * 完了の間の永続化層。kanryo_tasks / kanryo_task_likes テーブルに対する読み書きを行う。
  */
 export interface KanryoRepository {
   listTasks(params: ListTasksParams): Promise<TaskPage>;
   createTask(input: { authorId: string; body: string; dueMinutes: number }): Promise<KanryoTask>;
   completeTask(input: { id: string; authorId: string }): Promise<KanryoTask>;
+  likeTask(input: { taskId: string; userId: string }): Promise<void>;
+  unlikeTask(input: { taskId: string; userId: string }): Promise<void>;
 }
 
+// kanryo_task_likes が kanryo_tasks / profiles の双方にFKを持つため、PostgRESTからは
+// 「kanryo_tasks → profiles」の経路が直接のFKと kanryo_task_likes 経由の2通りに見えてしまう。
+// `!制約名` の埋め込みヒントで直接のFKを明示し、あいまいさを解消する。
 const TASK_SELECT_COLUMNS =
-  "id, body, due_at, status, completed_at, daily_seq, created_at, user_id, profiles(id, display_name, avatar_url)";
+  "id, body, due_at, status, completed_at, daily_seq, created_at, user_id, profiles!kanryo_tasks_user_id_profiles_id_fk(id, display_name, avatar_url)";
+
+/** 一覧取得時のみ、いいねしたユーザーもあわせて埋め込み取得する。 */
+const TASK_SELECT_COLUMNS_WITH_LIKES = `${TASK_SELECT_COLUMNS}, kanryo_task_likes(user_id, profiles!kanryo_task_likes_user_id_profiles_id_fk(id, display_name, avatar_url))`;
 
 type TaskRow = Pick<
   Tables<"kanryo_tasks">,
   "id" | "body" | "due_at" | "status" | "completed_at" | "daily_seq" | "created_at"
 >;
 
+type ProfileColumns = Pick<Tables<"profiles">, "id" | "display_name" | "avatar_url">;
+
 type TaskRowWithProfile = TaskRow & {
-  profiles: Pick<Tables<"profiles">, "id" | "display_name" | "avatar_url"> | null;
+  profiles: ProfileColumns | null;
 };
+
+type TaskLikeRow = {
+  user_id: string;
+  profiles: ProfileColumns | null;
+};
+
+type TaskRowWithProfileAndLikes = TaskRowWithProfile & {
+  kanryo_task_likes: TaskLikeRow[];
+};
+
+function toKanryoUser(profile: ProfileColumns): KanryoUser {
+  return { id: profile.id, displayName: profile.display_name, avatarUrl: profile.avatar_url };
+}
+
+/** いいねの埋め込み取得結果を、いいねしたユーザーの一覧に変換する。 */
+function toLikeUsers(rows: readonly TaskLikeRow[]): KanryoUser[] {
+  return rows
+    .filter((row): row is TaskLikeRow & { profiles: ProfileColumns } => row.profiles !== null)
+    .map((row) => toKanryoUser(row.profiles));
+}
 
 /** DBの行（＋投稿者情報）からアプリ側の型に変換する。 */
 export function toKanryoTask(row: TaskRow, author: KanryoUser): KanryoTask {
@@ -60,11 +93,7 @@ function toKanryoTaskFromJoinedRow(row: TaskRowWithProfile): KanryoTask {
     throw new Error(`投稿者が見つかりません: ${row.id}`);
   }
 
-  return toKanryoTask(row, {
-    id: row.profiles.id,
-    displayName: row.profiles.display_name,
-    avatarUrl: row.profiles.avatar_url,
-  });
+  return toKanryoTask(row, toKanryoUser(row.profiles));
 }
 
 export function createSupabaseKanryoRepository(
@@ -74,7 +103,7 @@ export function createSupabaseKanryoRepository(
     async listTasks({ limit, cursor }) {
       let query = supabase
         .from("kanryo_tasks")
-        .select(TASK_SELECT_COLUMNS)
+        .select(TASK_SELECT_COLUMNS_WITH_LIKES)
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .limit(limit + 1);
@@ -93,7 +122,7 @@ export function createSupabaseKanryoRepository(
         throw new Error(error.message);
       }
 
-      const rows = data as unknown as TaskRowWithProfile[];
+      const rows = data as unknown as TaskRowWithProfileAndLikes[];
       const hasMore = rows.length > limit;
       const page = hasMore ? rows.slice(0, limit) : rows;
       const last = page.at(-1);
@@ -102,6 +131,7 @@ export function createSupabaseKanryoRepository(
         tasks: page.map(toKanryoTaskFromJoinedRow),
         nextCursor:
           hasMore && last !== undefined ? { createdAt: last.created_at, id: last.id } : null,
+        likes: Object.fromEntries(page.map((row) => [row.id, toLikeUsers(row.kanryo_task_likes)])),
       };
     },
 
@@ -153,6 +183,33 @@ export function createSupabaseKanryoRepository(
       }
 
       return toKanryoTaskFromJoinedRow(data as unknown as TaskRowWithProfile);
+    },
+
+    async likeTask({ taskId, userId }) {
+      // 既にいいね済みの場合は複合主キーの一意制約に反するため、ignoreDuplicates で無視する
+      // （連打・複数タブでの二重送信を許容する）
+      const { error } = await supabase
+        .from("kanryo_task_likes")
+        .upsert(
+          { task_id: taskId, user_id: userId },
+          { onConflict: "task_id,user_id", ignoreDuplicates: true },
+        );
+
+      if (error !== null) {
+        throw new Error(error.message);
+      }
+    },
+
+    async unlikeTask({ taskId, userId }) {
+      const { error } = await supabase
+        .from("kanryo_task_likes")
+        .delete()
+        .eq("task_id", taskId)
+        .eq("user_id", userId);
+
+      if (error !== null) {
+        throw new Error(error.message);
+      }
     },
   };
 }

@@ -1,0 +1,369 @@
+{
+  "id": "8fb3c961-95bb-44bc-9c86-9042bf2e9abd",
+  "prevId": "fa77f905-b935-4ab6-96f9-94eeb4404917",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.kanryo_task_likes": {
+      "name": "kanryo_task_likes",
+      "schema": "",
+      "columns": {
+        "task_id": {
+          "name": "task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "kanryo_task_likes_task_id_idx": {
+          "name": "kanryo_task_likes_task_id_idx",
+          "columns": [
+            {
+              "expression": "task_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "kanryo_task_likes_task_id_kanryo_tasks_id_fk": {
+          "name": "kanryo_task_likes_task_id_kanryo_tasks_id_fk",
+          "tableFrom": "kanryo_task_likes",
+          "columnsFrom": ["task_id"],
+          "tableTo": "kanryo_tasks",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "kanryo_task_likes_user_id_profiles_id_fk": {
+          "name": "kanryo_task_likes_user_id_profiles_id_fk",
+          "tableFrom": "kanryo_task_likes",
+          "columnsFrom": ["user_id"],
+          "tableTo": "profiles",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "kanryo_task_likes_task_id_user_id_pk": {
+          "name": "kanryo_task_likes_task_id_user_id_pk",
+          "columns": ["task_id", "user_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "kanryo_task_likes are viewable by authenticated users": {
+          "name": "kanryo_task_likes are viewable by authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        },
+        "users can like as themselves": {
+          "name": "users can like as themselves",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "(select auth.uid()) = \"kanryo_task_likes\".\"user_id\""
+        },
+        "users can unlike their own like": {
+          "name": "users can unlike their own like",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"kanryo_task_likes\".\"user_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.kanryo_tasks": {
+      "name": "kanryo_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "kanryo_task_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jst_date": {
+          "name": "jst_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "daily_seq": {
+          "name": "daily_seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "kanryo_tasks_created_at_id_idx": {
+          "name": "kanryo_tasks_created_at_id_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "kanryo_tasks_user_id_status_idx": {
+          "name": "kanryo_tasks_user_id_status_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "kanryo_tasks_user_id_profiles_id_fk": {
+          "name": "kanryo_tasks_user_id_profiles_id_fk",
+          "tableFrom": "kanryo_tasks",
+          "columnsFrom": ["user_id"],
+          "tableTo": "profiles",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "kanryo_tasks_user_id_jst_date_daily_seq_key": {
+          "name": "kanryo_tasks_user_id_jst_date_daily_seq_key",
+          "columns": ["user_id", "jst_date", "daily_seq"],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "kanryo_tasks are viewable by authenticated users": {
+          "name": "kanryo_tasks are viewable by authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        },
+        "users can insert own pending kanryo_tasks": {
+          "name": "users can insert own pending kanryo_tasks",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "(select auth.uid()) = \"kanryo_tasks\".\"user_id\" and \"kanryo_tasks\".\"status\" = 'pending' and \"kanryo_tasks\".\"completed_at\" is null"
+        },
+        "users can update own kanryo_tasks": {
+          "name": "users can update own kanryo_tasks",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"kanryo_tasks\".\"user_id\"",
+          "withCheck": "(select auth.uid()) = \"kanryo_tasks\".\"user_id\""
+        }
+      },
+      "checkConstraints": {
+        "kanryo_tasks_status_completed_at_check": {
+          "name": "kanryo_tasks_status_completed_at_check",
+          "value": "(\"kanryo_tasks\".\"status\" = 'completed') = (\"kanryo_tasks\".\"completed_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "member_type": {
+          "name": "member_type",
+          "type": "member_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'zero'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "profiles_id_users_id_fk": {
+          "name": "profiles_id_users_id_fk",
+          "tableFrom": "profiles",
+          "columnsFrom": ["id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "profiles are viewable by authenticated users": {
+          "name": "profiles are viewable by authenticated users",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        },
+        "users can update own profile": {
+          "name": "users can update own profile",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"profiles\".\"id\"",
+          "withCheck": "(select auth.uid()) = \"profiles\".\"id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.kanryo_task_status": {
+      "name": "kanryo_task_status",
+      "schema": "public",
+      "values": ["pending", "completed"]
+    },
+    "public.member_type": {
+      "name": "member_type",
+      "schema": "public",
+      "values": ["zero", "ichi"]
+    }
+  },
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
