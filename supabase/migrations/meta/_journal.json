@@ -15,6 +15,13 @@
       "when": 1786494591474,
       "tag": "0001_profiles_triggers_and_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789823163237,
+      "tag": "0002_use_discord_global_name",
+      "breakpoints": true
     }
   ]
 }

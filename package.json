@@ -43,6 +43,7 @@
     "jsdom": "^30.0.1",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
+    "postgres": "^3.4.9",
     "shadcn": "^4.16.2",
     "supabase": "^2.113.0",
     "tailwindcss": "^4",

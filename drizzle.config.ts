@@ -3,7 +3,7 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   dialect: "postgresql",
   schema: "./lib/db/schema.ts",
-  out: "./drizzle",
+  out: "./supabase/migrations",
   // TS 側は camelCase、DB 側は snake_case で揃える
   casing: "snake_case",
   // Supabase が管理する auth / storage などのスキーマには手を出さない
