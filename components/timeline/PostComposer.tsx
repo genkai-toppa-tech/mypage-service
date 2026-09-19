@@ -1,7 +1,7 @@
 "use client";
 
 import { PostForm } from "@/components/timeline/PostForm";
-import { UserAvatar } from "@/components/timeline/UserAvatar";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import type { User } from "@/lib/timeline/types";
 
 type PostComposerProps = {

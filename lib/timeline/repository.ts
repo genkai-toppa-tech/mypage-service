@@ -1,3 +1,4 @@
+import { compareByCursorOrder, isOlderThanCursor } from "@/lib/pagination/cursor";
 import { containsEveryoneMention } from "@/lib/timeline/mentions";
 import type { Post, PostCursor, PostPage, User } from "@/lib/timeline/types";
 import { validatePostBody } from "@/lib/timeline/validation";
@@ -37,37 +38,6 @@ type StoredPost = {
   /** 未削除の場合は null。積み上げの記録を残すため物理削除はしない。 */
   deletedAt: string | null;
 };
-
-/** 新着順（createdAt desc, id desc）で並べるための比較関数。 */
-export function comparePostOrder(
-  a: { createdAt: string; id: string },
-  b: { createdAt: string; id: string },
-): number {
-  if (a.createdAt !== b.createdAt) {
-    return a.createdAt < b.createdAt ? 1 : -1;
-  }
-
-  if (a.id === b.id) {
-    return 0;
-  }
-
-  return a.id < b.id ? 1 : -1;
-}
-
-/**
- * カーソルより後ろ（＝より古い側）に並ぶ投稿かを判定する。
- * OFFSET と違い、読み込み中に新しい投稿が増えても重複・取りこぼしが起きない。
- */
-export function isOlderThanCursor(
-  post: { createdAt: string; id: string },
-  cursor: PostCursor,
-): boolean {
-  if (post.createdAt !== cursor.createdAt) {
-    return post.createdAt < cursor.createdAt;
-  }
-
-  return post.id < cursor.id;
-}
 
 export function createInMemoryPostRepository(options: {
   users: readonly User[];
@@ -126,7 +96,9 @@ export function createInMemoryPostRepository(options: {
 
   return {
     async listPosts({ limit, cursor }) {
-      const ordered = posts.filter((post) => post.deletedAt === null).toSorted(comparePostOrder);
+      const ordered = posts
+        .filter((post) => post.deletedAt === null)
+        .toSorted(compareByCursorOrder);
       const candidates =
         cursor == null ? ordered : ordered.filter((post) => isOlderThanCursor(post, cursor));
       const page = candidates.slice(0, limit);

@@ -1,6 +1,6 @@
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { SidebarNav } from "@/components/layout/SidebarNav";
-import { UserAvatar } from "@/components/timeline/UserAvatar";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import type { Profile } from "@/lib/auth/types";
 
 const SERVICE_NAME = "限界突破塾";
