@@ -1,6 +1,4 @@
-// NOTE: PR #27（Issue #19-21）で components/user/UserAvatar.tsx へ移設予定。
-// そちらが先にマージされた場合は、このimportパスもあわせて更新が必要。
-import { UserAvatar } from "@/components/timeline/UserAvatar";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import type { Profile } from "@/lib/auth/types";
 
 /** マイページ上部のプロフィール表示（アバター・表示名）。 */
