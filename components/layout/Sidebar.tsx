@@ -3,11 +3,15 @@ import { SidebarNav } from "@/components/layout/SidebarNav";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import type { Profile } from "@/lib/auth/types";
 
-const SERVICE_NAME = "限界突破塾";
+export const SERVICE_NAME = "限界突破塾";
 
-export function Sidebar({ currentUser }: { currentUser: Profile | null }) {
+/**
+ * サイドメニューの中身（ロゴ・ナビゲーション・ユーザー情報）。
+ * デスクトップの常設サイドバーと、モバイルのドロワー（MobileSidebar）の両方から使う。
+ */
+export function SidebarContent({ currentUser }: { currentUser: Profile | null }) {
   return (
-    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border hidden w-60 shrink-0 flex-col border-r md:flex">
+    <>
       <div className="border-sidebar-border flex h-14 items-center border-b px-5">
         <span className="text-sm font-semibold tracking-wide">{SERVICE_NAME}</span>
       </div>
@@ -27,6 +31,14 @@ export function Sidebar({ currentUser }: { currentUser: Profile | null }) {
           <SignOutButton />
         </div>
       )}
+    </>
+  );
+}
+
+export function Sidebar({ currentUser }: { currentUser: Profile | null }) {
+  return (
+    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border hidden w-60 shrink-0 flex-col border-r md:flex">
+      <SidebarContent currentUser={currentUser} />
     </aside>
   );
 }
