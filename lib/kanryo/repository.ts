@@ -34,11 +34,14 @@ export interface KanryoRepository {
   unlikeTask(input: { taskId: string; userId: string }): Promise<void>;
 }
 
+// kanryo_task_likes が kanryo_tasks / profiles の双方にFKを持つため、PostgRESTからは
+// 「kanryo_tasks → profiles」の経路が直接のFKと kanryo_task_likes 経由の2通りに見えてしまう。
+// `!制約名` の埋め込みヒントで直接のFKを明示し、あいまいさを解消する。
 const TASK_SELECT_COLUMNS =
-  "id, body, due_at, status, completed_at, daily_seq, created_at, user_id, profiles(id, display_name, avatar_url)";
+  "id, body, due_at, status, completed_at, daily_seq, created_at, user_id, profiles!kanryo_tasks_user_id_profiles_id_fk(id, display_name, avatar_url)";
 
 /** 一覧取得時のみ、いいねしたユーザーもあわせて埋め込み取得する。 */
-const TASK_SELECT_COLUMNS_WITH_LIKES = `${TASK_SELECT_COLUMNS}, kanryo_task_likes(user_id, profiles(id, display_name, avatar_url))`;
+const TASK_SELECT_COLUMNS_WITH_LIKES = `${TASK_SELECT_COLUMNS}, kanryo_task_likes(user_id, profiles!kanryo_task_likes_user_id_profiles_id_fk(id, display_name, avatar_url))`;
 
 type TaskRow = Pick<
   Tables<"kanryo_tasks">,
