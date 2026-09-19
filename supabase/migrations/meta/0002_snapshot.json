@@ -54,14 +54,10 @@
         "profiles_id_users_id_fk": {
           "name": "profiles_id_users_id_fk",
           "tableFrom": "profiles",
-          "columnsFrom": [
-            "id"
-          ],
+          "columnsFrom": ["id"],
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -73,18 +69,14 @@
           "name": "profiles are viewable by authenticated users",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "using": "true"
         },
         "users can update own profile": {
           "name": "users can update own profile",
           "as": "PERMISSIVE",
           "for": "UPDATE",
-          "to": [
-            "authenticated"
-          ],
+          "to": ["authenticated"],
           "using": "(select auth.uid()) = \"profiles\".\"id\"",
           "withCheck": "(select auth.uid()) = \"profiles\".\"id\""
         }
@@ -97,10 +89,7 @@
     "public.member_type": {
       "name": "member_type",
       "schema": "public",
-      "values": [
-        "zero",
-        "ichi"
-      ]
+      "values": ["zero", "ichi"]
     }
   },
   "schemas": {},
