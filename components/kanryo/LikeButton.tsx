@@ -48,7 +48,7 @@ export function LikeButton({ likes, likedByMe, onToggle }: LikeButtonProps) {
         aria-label={likedByMe ? "いいねを取り消す" : "いいねする"}
         className={cn(
           "flex items-center gap-1 rounded-full px-1 py-1 text-xs font-medium transition-colors disabled:opacity-50",
-          likedByMe ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          likedByMe ? "text-destructive" : "text-muted-foreground hover:text-foreground",
         )}
       >
         <Heart className="size-4" fill={likedByMe ? "currentColor" : "none"} />
