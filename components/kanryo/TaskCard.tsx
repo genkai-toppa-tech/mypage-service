@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { UserAvatar } from "@/components/timeline/UserAvatar";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import { formatOverrun, formatRemaining } from "@/lib/kanryo/format";
 import { getTaskDisplayState } from "@/lib/kanryo/status";
 import type { KanryoTask } from "@/lib/kanryo/types";

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { PostBody } from "@/components/timeline/PostBody";
 import { PostForm } from "@/components/timeline/PostForm";
-import { UserAvatar } from "@/components/timeline/UserAvatar";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import { formatRelativeTime } from "@/lib/timeline/format";
 import type { Post } from "@/lib/timeline/types";
 

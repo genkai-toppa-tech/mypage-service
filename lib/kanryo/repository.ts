@@ -1,117 +1,108 @@
-import { toJstDateKey } from "@/lib/kanryo/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { computeDueAt, validateDueMinutes } from "@/lib/kanryo/due-at";
-import type { KanryoTask, KanryoUser, TaskStatus } from "@/lib/kanryo/types";
+import type { KanryoTask, KanryoUser } from "@/lib/kanryo/types";
 import { validateTaskBody } from "@/lib/kanryo/validation";
+import { compareByCursorOrder, type Cursor } from "@/lib/pagination/cursor";
+import type { Database, Tables, TablesInsert } from "@/lib/supabase/database.types";
+
+export type TaskCursor = Cursor;
+
+export type ListTasksParams = {
+  limit: number;
+  /** 先頭ページを取得する場合は未指定または null。 */
+  cursor?: TaskCursor | null;
+};
+
+export type TaskPage = {
+  tasks: KanryoTask[];
+  /** 次ページが存在しない場合は null。 */
+  nextCursor: TaskCursor | null;
+};
 
 /**
- * 完了の間の永続化層。
- * kanryo_tasks テーブルの導入後は、このインターフェースを満たす Supabase 実装に差し替える。
+ * 完了の間の永続化層。kanryo_tasks テーブルに対する読み書きを行う。
  */
 export interface KanryoRepository {
-  listTasks(): Promise<KanryoTask[]>;
+  listTasks(params: ListTasksParams): Promise<TaskPage>;
   createTask(input: { authorId: string; body: string; dueMinutes: number }): Promise<KanryoTask>;
   completeTask(input: { id: string; authorId: string }): Promise<KanryoTask>;
 }
 
-/** インメモリ実装の初期データ。createTask と同じ形の入力で、状態を作り込める。 */
-export type SeedKanryoTask = {
-  id: string;
-  authorId: string;
-  body: string;
-  createdAt: string;
-  dueAt: string;
-  status: TaskStatus;
-  completedAt?: string | null;
+const TASK_SELECT_COLUMNS =
+  "id, body, due_at, status, completed_at, daily_seq, created_at, user_id, profiles(id, display_name, avatar_url)";
+
+type TaskRow = Pick<
+  Tables<"kanryo_tasks">,
+  "id" | "body" | "due_at" | "status" | "completed_at" | "daily_seq" | "created_at"
+>;
+
+type TaskRowWithProfile = TaskRow & {
+  profiles: Pick<Tables<"profiles">, "id" | "display_name" | "avatar_url"> | null;
 };
 
-type StoredTask = {
-  id: string;
-  authorId: string;
-  body: string;
-  createdAt: string;
-  dueAt: string;
-  status: TaskStatus;
-  completedAt: string | null;
-  dailySeq: number;
-};
-
-/** 新着順（createdAt desc, id desc）で並べるための比較関数。 */
-function compareTaskOrder(
-  a: { createdAt: string; id: string },
-  b: { createdAt: string; id: string },
-) {
-  if (a.createdAt !== b.createdAt) {
-    return a.createdAt < b.createdAt ? 1 : -1;
-  }
-
-  if (a.id === b.id) {
-    return 0;
-  }
-
-  return a.id < b.id ? 1 : -1;
-}
-
-/** 同一ユーザー・同一日（JST）の既存タスク数から、当日何件目かを求める。 */
-function nextDailySeq(tasks: readonly StoredTask[], authorId: string, createdAt: string): number {
-  const dateKey = toJstDateKey(createdAt);
-  const count = tasks.filter(
-    (task) => task.authorId === authorId && toJstDateKey(task.createdAt) === dateKey,
-  ).length;
-
-  return count + 1;
-}
-
-export function createInMemoryKanryoRepository(options: {
-  users: readonly KanryoUser[];
-  seedTasks?: readonly SeedKanryoTask[];
-  /** タスクIDの採番。テストから固定値を渡せるようにしている。 */
-  generateId?: () => string;
-  /** 現在時刻。テストから固定値を注入できるようにしている。 */
-  now?: () => Date;
-}): KanryoRepository {
-  const generateId = options.generateId ?? (() => crypto.randomUUID());
-  const now = options.now ?? (() => new Date());
-  const usersById = new Map(options.users.map((user) => [user.id, user]));
-
-  const seededTasks: StoredTask[] = [];
-
-  for (const seed of options.seedTasks ?? []) {
-    seededTasks.push({
-      id: seed.id,
-      authorId: seed.authorId,
-      body: seed.body,
-      createdAt: seed.createdAt,
-      dueAt: seed.dueAt,
-      status: seed.status,
-      completedAt: seed.completedAt ?? null,
-      dailySeq: nextDailySeq(seededTasks, seed.authorId, seed.createdAt),
-    });
-  }
-
-  let tasks: StoredTask[] = seededTasks;
-
-  function toTask(stored: StoredTask): KanryoTask {
-    const author = usersById.get(stored.authorId);
-
-    if (author === undefined) {
-      throw new Error(`投稿者が見つかりません: ${stored.authorId}`);
-    }
-
-    return {
-      id: stored.id,
-      author,
-      body: stored.body,
-      dueAt: stored.dueAt,
-      status: stored.status,
-      completedAt: stored.completedAt,
-      dailySeq: stored.dailySeq,
-      createdAt: stored.createdAt,
-    };
-  }
-
+/** DBの行（＋投稿者情報）からアプリ側の型に変換する。 */
+export function toKanryoTask(row: TaskRow, author: KanryoUser): KanryoTask {
   return {
-    async listTasks() {
-      return tasks.toSorted(compareTaskOrder).map(toTask);
+    id: row.id,
+    author,
+    body: row.body,
+    dueAt: row.due_at,
+    status: row.status,
+    completedAt: row.completed_at,
+    dailySeq: row.daily_seq,
+    createdAt: row.created_at,
+  };
+}
+
+function toKanryoTaskFromJoinedRow(row: TaskRowWithProfile): KanryoTask {
+  if (row.profiles === null) {
+    throw new Error(`投稿者が見つかりません: ${row.id}`);
+  }
+
+  return toKanryoTask(row, {
+    id: row.profiles.id,
+    displayName: row.profiles.display_name,
+    avatarUrl: row.profiles.avatar_url,
+  });
+}
+
+export function createSupabaseKanryoRepository(
+  supabase: SupabaseClient<Database>,
+): KanryoRepository {
+  return {
+    async listTasks({ limit, cursor }) {
+      let query = supabase
+        .from("kanryo_tasks")
+        .select(TASK_SELECT_COLUMNS)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(limit + 1);
+
+      // (created_at, id) の複合カーソル条件。並び順 (created_at desc, id desc) の
+      // 「カーソルより後ろ」を PostgREST の or() で組み立てる
+      if (cursor != null) {
+        query = query.or(
+          `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
+        );
+      }
+
+      const { data, error } = await query;
+
+      if (error !== null) {
+        throw new Error(error.message);
+      }
+
+      const rows = data as unknown as TaskRowWithProfile[];
+      const hasMore = rows.length > limit;
+      const page = hasMore ? rows.slice(0, limit) : rows;
+      const last = page.at(-1);
+
+      return {
+        tasks: page.map(toKanryoTaskFromJoinedRow),
+        nextCursor:
+          hasMore && last !== undefined ? { createdAt: last.created_at, id: last.id } : null,
+      };
     },
 
     async createTask({ authorId, body, dueMinutes }) {
@@ -127,47 +118,52 @@ export function createInMemoryKanryoRepository(options: {
         throw new Error(dueMinutesValidation.message);
       }
 
-      const nowValue = now();
-      const createdAt = nowValue.toISOString();
-      const stored: StoredTask = {
-        id: generateId(),
-        authorId,
-        body,
-        createdAt,
-        dueAt: computeDueAt(nowValue, dueMinutes),
-        status: "pending",
-        completedAt: null,
-        dailySeq: nextDailySeq(tasks, authorId, createdAt),
-      };
-      tasks = [...tasks, stored];
+      const dueAt = computeDueAt(new Date(), dueMinutes);
 
-      return toTask(stored);
+      const { data, error } = await supabase
+        .from("kanryo_tasks")
+        // jst_date / daily_seq は BEFORE INSERT トリガーが必ず上書きするため送らない。
+        // 生成された型はトリガーでの補完を表現できず必須列として要求してくるため、キャストで回避する。
+        .insert({ user_id: authorId, body, due_at: dueAt } as TablesInsert<"kanryo_tasks">)
+        .select(TASK_SELECT_COLUMNS)
+        .single();
+
+      if (error !== null) {
+        throw new Error(error.message);
+      }
+
+      return toKanryoTaskFromJoinedRow(data as unknown as TaskRowWithProfile);
     },
 
     async completeTask({ id, authorId }) {
-      const stored = tasks.find((task) => task.id === id);
+      const { data, error } = await supabase
+        .from("kanryo_tasks")
+        .update({ status: "completed" })
+        .eq("id", id)
+        .eq("user_id", authorId)
+        .select(TASK_SELECT_COLUMNS)
+        .single();
 
-      if (stored === undefined) {
-        throw new Error("タスクが見つかりません");
+      if (error !== null) {
+        // RLS または上の user_id フィルタに一致しなければ0行更新となり、
+        // single() が「行が見つからない」エラー(PGRST116)を返す
+        throw new Error(
+          error.code === "PGRST116" ? "他のユーザーのタスクは完了にできません" : error.message,
+        );
       }
 
-      // RLS で「本人のみ自分のタスクを更新できる」と定めた制約を、モックでも同じ形で再現する
-      if (stored.authorId !== authorId) {
-        throw new Error("他のユーザーのタスクは完了にできません");
-      }
-
-      if (stored.status === "completed") {
-        throw new Error("すでに完了しています");
-      }
-
-      const completed: StoredTask = {
-        ...stored,
-        status: "completed",
-        completedAt: now().toISOString(),
-      };
-      tasks = tasks.map((task) => (task.id === id ? completed : task));
-
-      return toTask(completed);
+      return toKanryoTaskFromJoinedRow(data as unknown as TaskRowWithProfile);
     },
   };
+}
+
+/** Realtime で受け取った投稿・完了を一覧へ反映する。既存IDなら上書き、新規なら先頭に追加する。 */
+export function upsertTask(tasks: readonly KanryoTask[], incoming: KanryoTask): KanryoTask[] {
+  const exists = tasks.some((task) => task.id === incoming.id);
+
+  if (exists) {
+    return tasks.map((task) => (task.id === incoming.id ? incoming : task));
+  }
+
+  return [incoming, ...tasks].toSorted(compareByCursorOrder);
 }

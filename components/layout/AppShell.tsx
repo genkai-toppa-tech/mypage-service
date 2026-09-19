@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import type { Profile } from "@/lib/auth/types";
 
@@ -21,8 +22,9 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-screen flex-1">
+      <MobileSidebar currentUser={currentUser} />
       <Sidebar currentUser={currentUser} />
-      <main className="flex-1 p-6 md:p-8">{children}</main>
+      <main className="flex-1 p-6 pt-20 md:p-8">{children}</main>
     </div>
   );
 }
