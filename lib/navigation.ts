@@ -12,6 +12,7 @@ export type NavItem = {
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: "ホーム", href: "/" },
   { label: "タイムライン", href: "/timeline", showsNotificationBadge: true },
+  { label: "完了の間", href: "/kanryo" },
 ];
 
 /**
