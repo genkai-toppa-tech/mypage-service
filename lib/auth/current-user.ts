@@ -33,3 +33,15 @@ export async function getCurrentUser(): Promise<Profile | null> {
 
   return data === null ? null : toProfile(data);
 }
+
+/**
+ * 指定したユーザーのプロフィールを返す。存在しない場合は null。
+ * マイページ（/user/[id]）で、本人以外のプロフィールを表示するために使う。
+ */
+export async function getProfileById(id: string): Promise<Profile | null> {
+  const supabase = await createClient();
+
+  const { data } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+
+  return data === null ? null : toProfile(data);
+}
