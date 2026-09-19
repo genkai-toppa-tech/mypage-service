@@ -36,6 +36,13 @@
       "when": 1789824329695,
       "tag": "0004_kanryo_tasks_triggers_and_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789825770613,
+      "tag": "0005_kanryo_completion_counts_view",
+      "breakpoints": true
     }
   ]
 }

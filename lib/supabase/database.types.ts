@@ -84,7 +84,22 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      kanryo_completion_counts: {
+        Row: {
+          today_count: number | null;
+          total_count: number | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kanryo_tasks_user_id_profiles_id_fk";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       [_ in never]: never;
