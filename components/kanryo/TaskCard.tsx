@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 
+import { LikeButton } from "@/components/kanryo/LikeButton";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { formatOverrun, formatRemaining } from "@/lib/kanryo/format";
+import { isLikedBy } from "@/lib/kanryo/likes";
 import { getTaskDisplayState } from "@/lib/kanryo/status";
-import type { KanryoTask } from "@/lib/kanryo/types";
+import type { KanryoTask, KanryoUser } from "@/lib/kanryo/types";
 import { formatRelativeTime } from "@/lib/timeline/format";
 
 type TaskCardProps = {
@@ -13,10 +15,20 @@ type TaskCardProps = {
   currentUserId: string;
   /** カウントダウン・期限切れ判定に使う現在時刻。 */
   now: Date;
+  /** このタスクにいいねしたユーザー一覧。 */
+  likes: readonly KanryoUser[];
   onComplete: (id: string) => Promise<void>;
+  onToggleLike: (id: string) => Promise<void>;
 };
 
-export function TaskCard({ task, currentUserId, now, onComplete }: TaskCardProps) {
+export function TaskCard({
+  task,
+  currentUserId,
+  now,
+  likes,
+  onComplete,
+  onToggleLike,
+}: TaskCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isOwnTask = task.author.id === currentUserId;
@@ -83,6 +95,12 @@ export function TaskCard({ task, currentUserId, now, onComplete }: TaskCardProps
               完了にする
             </button>
           )}
+
+          <LikeButton
+            likes={likes}
+            likedByMe={isLikedBy(likes, currentUserId)}
+            onToggle={() => onToggleLike(task.id)}
+          />
         </div>
 
         {error !== null && (

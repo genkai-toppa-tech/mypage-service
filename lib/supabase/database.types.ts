@@ -8,6 +8,39 @@ export type Database = {
   };
   public: {
     Tables: {
+      kanryo_task_likes: {
+        Row: {
+          created_at: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kanryo_task_likes_task_id_kanryo_tasks_id_fk";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "kanryo_tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kanryo_task_likes_user_id_profiles_id_fk";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       kanryo_tasks: {
         Row: {
           body: string;

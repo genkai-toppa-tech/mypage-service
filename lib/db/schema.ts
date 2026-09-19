@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgPolicy,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -120,5 +121,44 @@ export const kanryoTasks = pgTable(
       withCheck: sql`${authUid} = ${table.userId}`,
     }),
     // DELETE のポリシーは意図的に作らない。積み上げの記録を消さない方針。
+  ],
+).enableRLS();
+
+/** 完了の間の投稿への「いいね」。Issue #31。 */
+export const kanryoTaskLikes = pgTable(
+  "kanryo_task_likes",
+  {
+    taskId: uuid()
+      .notNull()
+      .references(() => kanryoTasks.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // 複合主キーにより「1ユーザー1いいね」をDBで保証する
+    primaryKey({ columns: [table.taskId, table.userId] }),
+    // タスクごとのいいね件数・いいねしたユーザー一覧の取得用
+    index("kanryo_task_likes_task_id_idx").on(table.taskId),
+
+    // 誰がいいねしたか分かるようにするため、認証済みであれば全員が閲覧できる
+    pgPolicy("kanryo_task_likes are viewable by authenticated users", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
+    // 自分の名義でのみいいねできる（自分の投稿へのいいねも許可する）
+    pgPolicy("users can like as themselves", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    // いいねの取り消し（unlike）は自分の行のみ。トグル操作のため kanryo_tasks と異なり DELETE を許可する
+    pgPolicy("users can unlike their own like", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
   ],
 ).enableRLS();

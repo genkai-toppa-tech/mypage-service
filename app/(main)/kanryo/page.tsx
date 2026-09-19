@@ -36,6 +36,7 @@ export default async function KanryoPage() {
           currentUser={currentUser}
           initialTasks={initialPage.tasks}
           initialCursor={initialPage.nextCursor}
+          initialLikes={initialPage.likes}
         />
       </div>
     </section>

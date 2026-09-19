@@ -43,6 +43,20 @@
       "when": 1789825770613,
       "tag": "0005_kanryo_completion_counts_view",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789831401292,
+      "tag": "0006_kanryo_task_likes",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789831440584,
+      "tag": "0007_kanryo_task_likes_grants_and_realtime",
+      "breakpoints": true
     }
   ]
 }

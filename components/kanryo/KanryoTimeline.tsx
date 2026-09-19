@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { TaskComposerButton } from "@/components/kanryo/TaskComposerButton";
 import { TaskList } from "@/components/kanryo/TaskList";
 import type { Profile } from "@/lib/auth/types";
+import { addLike, isLikedBy, removeLike, type TaskLikes } from "@/lib/kanryo/likes";
 import {
   createSupabaseKanryoRepository,
   toKanryoTask,
@@ -26,13 +27,20 @@ type KanryoTimelineProps = {
   currentUser: Profile;
   initialTasks: readonly KanryoTask[];
   initialCursor: TaskCursor | null;
+  initialLikes: TaskLikes;
 };
 
-export function KanryoTimeline({ currentUser, initialTasks, initialCursor }: KanryoTimelineProps) {
+export function KanryoTimeline({
+  currentUser,
+  initialTasks,
+  initialCursor,
+  initialLikes,
+}: KanryoTimelineProps) {
   const [supabase] = useState(() => createClient());
   const [repository] = useState(() => createSupabaseKanryoRepository(supabase));
   const [tasks, setTasks] = useState<readonly KanryoTask[]>(initialTasks);
   const [cursor, setCursor] = useState<TaskCursor | null>(initialCursor);
+  const [likes, setLikes] = useState<TaskLikes>(initialLikes);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -55,25 +63,33 @@ export function KanryoTimeline({ currentUser, initialTasks, initialCursor }: Kan
   }, []);
 
   useEffect(() => {
-    async function resolveTask(row: Tables<"kanryo_tasks">): Promise<KanryoTask | null> {
-      let author = profilesCache.current.get(row.user_id);
+    async function resolveUser(userId: string): Promise<KanryoUser | null> {
+      const cached = profilesCache.current.get(userId);
 
-      if (author === undefined) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, display_name, avatar_url")
-          .eq("id", row.user_id)
-          .maybeSingle();
-
-        if (data === null) {
-          return null;
-        }
-
-        author = { id: data.id, displayName: data.display_name, avatarUrl: data.avatar_url };
-        profilesCache.current.set(author.id, author);
+      if (cached !== undefined) {
+        return cached;
       }
 
-      return toKanryoTask(row, author);
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (data === null) {
+        return null;
+      }
+
+      const user = { id: data.id, displayName: data.display_name, avatarUrl: data.avatar_url };
+      profilesCache.current.set(user.id, user);
+
+      return user;
+    }
+
+    async function resolveTask(row: Tables<"kanryo_tasks">): Promise<KanryoTask | null> {
+      const author = await resolveUser(row.user_id);
+
+      return author === null ? null : toKanryoTask(row, author);
     }
 
     const channel = supabase
@@ -98,6 +114,30 @@ export function KanryoTimeline({ currentUser, initialTasks, initialCursor }: Kan
               setTasks((current) => upsertTask(current, task));
             }
           });
+        },
+      )
+      .on<Tables<"kanryo_task_likes">>(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "kanryo_task_likes" },
+        (payload) => {
+          resolveUser(payload.new.user_id).then((user) => {
+            if (user !== null) {
+              setLikes((current) => addLike(current, payload.new.task_id, user));
+            }
+          });
+        },
+      )
+      .on<Tables<"kanryo_task_likes">>(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "kanryo_task_likes" },
+        (payload) => {
+          // DELETE の payload.old には主キー列（task_id, user_id）のみ含まれる
+          const taskId = payload.old.task_id;
+          const userId = payload.old.user_id;
+
+          if (taskId !== undefined && userId !== undefined) {
+            setLikes((current) => removeLike(current, taskId, userId));
+          }
         },
       )
       .subscribe();
@@ -151,11 +191,35 @@ export function KanryoTimeline({ currentUser, initialTasks, initialCursor }: Kan
       const page = await repository.listTasks({ limit: PAGE_SIZE, cursor });
 
       setTasks((current) => [...current, ...page.tasks]);
+      setLikes((current) => ({ ...current, ...page.likes }));
       setCursor(page.nextCursor);
     } catch (caught) {
       setError(toMessage(caught, "追加の読み込みに失敗しました"));
     } finally {
       setIsLoadingMore(false);
+    }
+  }
+
+  async function handleToggleLike(taskId: string) {
+    // 押した瞬間にUIへ反映する（楽観的更新）。失敗したら元の状態に戻す
+    const alreadyLiked = isLikedBy(likes[taskId] ?? [], currentUser.id);
+    const previousLikes = likes;
+
+    setLikes((current) =>
+      alreadyLiked
+        ? removeLike(current, taskId, currentUser.id)
+        : addLike(current, taskId, currentUser),
+    );
+
+    try {
+      if (alreadyLiked) {
+        await repository.unlikeTask({ taskId, userId: currentUser.id });
+      } else {
+        await repository.likeTask({ taskId, userId: currentUser.id });
+      }
+    } catch (caught) {
+      setLikes(previousLikes);
+      throw caught;
     }
   }
 
@@ -165,10 +229,12 @@ export function KanryoTimeline({ currentUser, initialTasks, initialCursor }: Kan
         tasks={tasks}
         currentUserId={currentUser.id}
         now={now}
+        likes={likes}
         hasMore={cursor !== null}
         isLoadingMore={isLoadingMore}
         onLoadMore={handleLoadMore}
         onComplete={handleComplete}
+        onToggleLike={handleToggleLike}
       />
 
       {error !== null && (
