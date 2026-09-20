@@ -13,7 +13,8 @@
     "lint:fix": "oxlint --fix",
     "format:check": "oxfmt --check .",
     "test:watch": "vitest",
-    "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts"
+    "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -40,7 +41,9 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.5",
     "drizzle-kit": "^0.31.10",
+    "husky": "^9.1.7",
     "jsdom": "^30.0.1",
+    "lint-staged": "^17.5.1",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
     "postgres": "^3.4.9",
