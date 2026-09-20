@@ -55,18 +55,19 @@ export function TaskComposerDialog({ open, onOpenChange, onSubmit }: TaskCompose
       <Dialog.Portal>
         <Dialog.Overlay
           className={cn(
-            "fixed inset-0 bg-black/40 transition-opacity duration-300",
+            "fixed inset-0 z-50 bg-black/40 transition-opacity duration-300",
             isVisible ? "opacity-100" : "opacity-0",
           )}
         />
         <Dialog.Content
           className={cn(
-            "border-border bg-background fixed inset-0 flex flex-col overflow-y-auto border-t p-6 transition-transform duration-300 ease-out",
+            // z-50: スマホ用ヘッダー（MobileSidebar、z-40）ごと画面全体を覆う
+            "bg-background fixed inset-0 z-50 flex flex-col transition-transform duration-300 ease-out",
             isVisible ? "translate-y-0" : "translate-y-full",
           )}
         >
-          <Dialog.Title className="text-lg font-semibold">完了の間に投稿</Dialog.Title>
-          <Dialog.Description className="text-muted-foreground mt-1 text-sm">
+          <Dialog.Title className="sr-only">完了の間に投稿</Dialog.Title>
+          <Dialog.Description className="sr-only">
             制限時間つきの宣言を投稿します。
           </Dialog.Description>
 
@@ -74,7 +75,8 @@ export function TaskComposerDialog({ open, onOpenChange, onSubmit }: TaskCompose
             onSubmit={onSubmit}
             onCancel={requestClose}
             onSuccess={requestClose}
-            className="mt-4 flex-1"
+            actionsPlacement="header"
+            className="flex-1"
           />
         </Dialog.Content>
       </Dialog.Portal>
