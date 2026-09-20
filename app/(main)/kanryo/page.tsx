@@ -14,15 +14,17 @@ export const metadata: Metadata = {
 };
 
 export default async function KanryoPage() {
-  const currentUser = await getCurrentUser();
+  const supabase = await createClient();
+  const repository = createSupabaseKanryoRepository(supabase);
+
+  const [currentUser, initialPage] = await Promise.all([
+    getCurrentUser(),
+    repository.listTasks({ limit: PAGE_SIZE }),
+  ]);
 
   if (currentUser === null) {
     redirect("/login");
   }
-
-  const supabase = await createClient();
-  const repository = createSupabaseKanryoRepository(supabase);
-  const initialPage = await repository.listTasks({ limit: PAGE_SIZE });
 
   return (
     <section className="mx-auto w-full max-w-2xl">

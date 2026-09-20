@@ -11,21 +11,28 @@ export const SERVICE_NAME = "限界突破塾";
  * サイドメニューの中身（ロゴ・ナビゲーション・ユーザー情報）。
  * デスクトップの常設サイドバーと、モバイルのドロワー（MobileSidebar）の両方から使う。
  */
-export function SidebarContent({ currentUser }: { currentUser: Profile | null }) {
+export function SidebarContent({
+  currentUser,
+  onNavigate,
+}: {
+  currentUser: Profile | null;
+  onNavigate?: () => void;
+}) {
   return (
     <>
       <div className="border-sidebar-border flex h-14 items-center border-b px-5">
         <span className="text-sm font-semibold tracking-wide">{SERVICE_NAME}</span>
       </div>
 
-      <SidebarNav currentUserId={currentUser?.id ?? null} />
+      <SidebarNav currentUserId={currentUser?.id ?? null} onNavigate={onNavigate} />
 
       {currentUser !== null && (
         <div className="border-sidebar-border border-t px-3 py-3">
           <Link
             href={`/user/${currentUser.id}`}
+            onClick={onNavigate}
             aria-label={`${currentUser.displayName}のマイページ`}
-            className="hover:bg-sidebar-accent flex items-center gap-2 rounded-md px-3 py-2 transition-colors"
+            className="hover:bg-sidebar-accent active:scale-[0.98] active:bg-sidebar-accent flex items-center gap-2 rounded-md px-3 py-2 transition-[color,background-color,transform] duration-150"
           >
             <UserAvatar
               displayName={currentUser.displayName}
