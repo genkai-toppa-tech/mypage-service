@@ -18,11 +18,18 @@ import { cn } from "@/lib/utils";
 
 type TaskComposerFormProps = {
   onSubmit: (input: { body: string; dueMinutes: number }) => Promise<void>;
-  /** 指定するとキャンセルボタンを表示する（フルスクリーン投稿画面向け）。 */
+  /** 指定するとキャンセルボタンを表示する。 */
   onCancel?: () => void;
   /** 投稿成功後に呼ばれる（フォームのリセット後）。 */
   onSuccess?: () => void;
   className?: string;
+  /**
+   * アクションボタン（キャンセル・投稿する）の配置。
+   * "footer"（デフォルト）: 本文・制限時間の下にまとめて右寄せで表示する（PCの常時表示パネル向け）。
+   * "header": フォーム最上部にヘッダー行として表示する（キャンセルを左、投稿するを右）。
+   * フルスクリーン投稿画面で、本来ヘッダーがあった位置にボタンを配置するために使う。
+   */
+  actionsPlacement?: "footer" | "header";
 };
 
 /**
@@ -35,6 +42,7 @@ export function TaskComposerForm({
   onCancel,
   onSuccess,
   className,
+  actionsPlacement = "footer",
 }: TaskComposerFormProps) {
   const textareaId = useId();
   const [body, setBody] = useState("");
@@ -81,8 +89,29 @@ export function TaskComposerForm({
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} noValidate className={cn("flex flex-col gap-3", className)}>
+  const submitButton = (
+    <button
+      type="submit"
+      disabled={isSubmitting}
+      className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+    >
+      投稿する
+    </button>
+  );
+
+  const cancelButton = onCancel !== undefined && (
+    <button
+      type="button"
+      onClick={onCancel}
+      disabled={isSubmitting}
+      className="text-muted-foreground hover:text-foreground text-sm disabled:opacity-50"
+    >
+      キャンセル
+    </button>
+  );
+
+  const fields = (
+    <>
       <label htmlFor={textareaId} className="sr-only">
         完了の間の本文
       </label>
@@ -113,25 +142,29 @@ export function TaskComposerForm({
           {error}
         </p>
       )}
+    </>
+  );
+
+  if (actionsPlacement === "header") {
+    return (
+      <form onSubmit={handleSubmit} noValidate className={cn("flex flex-col", className)}>
+        <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
+          {cancelButton}
+          {submitButton}
+        </div>
+
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">{fields}</div>
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className={cn("flex flex-col gap-3", className)}>
+      {fields}
 
       <div className="mt-2 flex justify-end gap-3">
-        {onCancel !== undefined && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="text-muted-foreground hover:text-foreground text-sm disabled:opacity-50"
-          >
-            キャンセル
-          </button>
-        )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
-        >
-          投稿する
-        </button>
+        {cancelButton}
+        {submitButton}
       </div>
     </form>
   );
