@@ -1,13 +1,36 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { LoaderCircle } from "lucide-react";
 
 import { NotificationBadge } from "@/components/layout/NotificationBadge";
 import { isActiveNavItem, NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-export function SidebarNav({ currentUserId }: { currentUserId: string | null }) {
+/**
+ * Link の子として描画し、そのリンクへの遷移が進行中かどうかを表示する。
+ * useLinkStatus は Link の内側でしか使えないため、専用コンポーネントに切り出している。
+ */
+function NavLinkPendingIndicator() {
+  const { pending } = useLinkStatus();
+
+  if (!pending) {
+    return null;
+  }
+
+  return (
+    <LoaderCircle className="ml-2 inline size-3.5 animate-spin align-[-2px]" aria-hidden="true" />
+  );
+}
+
+export function SidebarNav({
+  currentUserId,
+  onNavigate,
+}: {
+  currentUserId: string | null;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -20,10 +43,13 @@ export function SidebarNav({ currentUserId }: { currentUserId: string | null }) 
             <li key={item.href} className="relative">
               <Link
                 href={item.href}
+                onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "block rounded-md px-3 py-2 text-sm font-medium",
+                  "transition-[color,background-color,transform] duration-150",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "active:scale-[0.97] active:bg-sidebar-accent active:text-sidebar-accent-foreground",
                   "focus-visible:ring-sidebar-ring focus-visible:outline-none focus-visible:ring-2",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -32,6 +58,7 @@ export function SidebarNav({ currentUserId }: { currentUserId: string | null }) 
                 )}
               >
                 {item.label}
+                <NavLinkPendingIndicator />
               </Link>
               {/* リンクのアクセシブル名を項目名のままに保つため、バッジは Link の外に置く。
                   クリックはバッジを透過させ、リンク側で受け取る。 */}

@@ -25,7 +25,8 @@ export function MobileSidebar({ currentUser }: { currentUser: Profile | null }) 
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const pathname = usePathname();
 
-  // 別ページへ遷移したら、開きっぱなしにならないようドロワーを閉じる
+  // ナビゲーションリンクのクリックでは onNavigate が即座に閉じるが、
+  // ブラウザの戻る/進むなどリンク経由でない遷移でも閉じ忘れないための保険。
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -111,7 +112,7 @@ export function MobileSidebar({ currentUser }: { currentUser: Profile | null }) 
             <X className="size-5" aria-hidden="true" />
           </Dialog.Close>
 
-          <SidebarContent currentUser={currentUser} />
+          <SidebarContent currentUser={currentUser} onNavigate={() => setOpen(false)} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
