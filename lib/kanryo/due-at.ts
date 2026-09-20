@@ -31,3 +31,37 @@ export function validateDueMinutes(minutes: number): ValidationResult {
 export function computeDueAt(now: Date, minutes: number): string {
   return new Date(now.getTime() + minutes * 60_000).toISOString();
 }
+
+/**
+ * 制限時間の選択内容。
+ * プリセットチップ（現在時刻からの相対分数）と、時刻指定（"HH:mm"）の2通り。
+ */
+export type DueAtSelection = { mode: "preset"; minutes: number } | { mode: "custom"; time: string };
+
+/** "HH:mm" を、今日中ならその時刻、既に過ぎていれば翌日のその時刻の Date にする。 */
+function nextOccurrenceOf(time: string, now: Date): Date {
+  const [hours, minutes] = time.split(":").map(Number);
+  const target = new Date(now);
+  target.setHours(hours, minutes, 0, 0);
+
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+
+  return target;
+}
+
+/**
+ * 選択内容から、投稿時点を起点とした分数に解決する。
+ * 時刻指定の場合、投稿するタイミングによって残り分数が変わるため、
+ * （プリセットのように固定した分数を保持するのではなく）投稿の直前に呼び出す想定。
+ */
+export function resolveDueMinutes(selection: DueAtSelection, now: Date): number {
+  if (selection.mode === "preset") {
+    return selection.minutes;
+  }
+
+  const target = nextOccurrenceOf(selection.time, now);
+
+  return Math.ceil((target.getTime() - now.getTime()) / 60_000);
+}

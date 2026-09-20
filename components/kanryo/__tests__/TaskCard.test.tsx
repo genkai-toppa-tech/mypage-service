@@ -56,10 +56,11 @@ describe("TaskCard", () => {
     expect(screen.getByText("1. 水を飲む")).toBeInTheDocument();
   });
 
-  it("進行中は残り時間を表示し、完了ボタンが押せる", () => {
+  it("進行中は制限時刻と残り時間を表示し、完了ボタンが押せる", () => {
     renderCard();
 
-    expect(screen.getByText("残り 5:00")).toBeInTheDocument();
+    // dueAt = 2026-09-19T00:05:00.000Z は日本時間で 09:05
+    expect(screen.getByText("09:05(残り: 5:00)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "完了にする" })).toBeInTheDocument();
   });
 

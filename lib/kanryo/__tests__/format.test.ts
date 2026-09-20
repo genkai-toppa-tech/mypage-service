@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { formatOverrun, formatRemaining } from "@/lib/kanryo/format";
+import { formatDueTime, formatOverrun, formatRemaining } from "@/lib/kanryo/format";
 
 const now = new Date("2026-09-19T00:00:00.000Z");
+
+describe("formatDueTime", () => {
+  it("日本時間の HH:mm 形式にする", () => {
+    expect(formatDueTime("2026-09-19T07:10:00.000Z")).toBe("16:10");
+  });
+
+  it("1桁の時・分は0埋めする", () => {
+    expect(formatDueTime("2026-09-19T00:05:00.000Z")).toBe("09:05");
+  });
+});
 
 describe("formatRemaining", () => {
   it("分:秒 の形式にする", () => {
