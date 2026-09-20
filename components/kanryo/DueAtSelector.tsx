@@ -108,7 +108,9 @@ export function DueAtSelector({ value, onChange }: DueAtSelectorProps) {
           type="time"
           value={timeInputValue}
           onChange={(event) => handleTimeChange(event.target.value)}
-          className="border-border focus-visible:ring-ring rounded-md border bg-transparent px-2 py-1 text-xs focus-visible:ring-2 focus-visible:outline-none"
+          // text-base（16px）未満だと iOS Safari がフォーカス時に自動ズームしてしまうため、
+          // スマホ幅では16px以上にする（PCでは見た目を変えないよう text-xs に戻す）
+          className="border-border focus-visible:ring-ring rounded-md border bg-transparent px-2 py-1 text-base focus-visible:ring-2 focus-visible:outline-none md:text-xs"
         />
 
         <div className="hidden md:flex md:flex-col">

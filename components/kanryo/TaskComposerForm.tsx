@@ -121,7 +121,9 @@ export function TaskComposerForm({
         onChange={(event) => setBody(event.target.value)}
         placeholder="例: 水を飲む"
         rows={2}
-        className="border-border focus-visible:ring-ring w-full resize-none rounded-md border bg-transparent px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+        // text-base（16px）未満だと iOS Safari がフォーカス時に自動ズームしてしまうため、
+        // スマホ幅では16px以上にする（PCでは見た目を変えないよう text-sm に戻す）
+        className="border-border focus-visible:ring-ring w-full resize-none rounded-md border bg-transparent px-3 py-2 text-base focus-visible:ring-2 focus-visible:outline-none md:text-sm"
       />
 
       <DueAtSelector value={dueAtSelection} onChange={setDueAtSelection} />
