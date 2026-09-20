@@ -53,10 +53,10 @@
 
 ### DBスキーマとマイグレーション
 
-- スキーマの一次情報源は `lib/db/schema.ts`（Drizzle）。ここを編集してから `pnpm drizzle-kit generate --name <名前>` でマイグレーションを生成する。**`drizzle/` 配下のSQLを手で新規作成しない**
-- トリガー・関数・列レベルのGRANT/REVOKEなど Drizzle のスキーマ定義で表現できないものは、`pnpm drizzle-kit generate --custom --name <名前>` で空のSQLファイルを作ってそこに書く
-- 適用は `pnpm drizzle-kit migrate`（`DATABASE_URL` が必要）
-- スキーマを変更したら `pnpm gen:types` で型を再生成してコミットする
+- スキーマの一次情報源は `lib/db/schema.ts`（Drizzle）。ここを編集してから `pnpm drizzle-kit generate --name <名前>` でマイグレーションを生成する。**`drizzle/` 配下のSQLを手で新規作成・変更しない**
+- SQLファイルは、必ずスキーマ定義`lib/db/schema.ts`（Drizzle）から`pnpm drizzle-kit generate --name <名前>` でマイグレーション生成したものを正として扱うこと。
+- スキーマを変更する際も、必ずスキーマ定義`lib/db/schema.ts`（Drizzle）を編集して都度`pnpm drizzle-kit generate --name <名前>` でマイグレーション生成すること（変更マイグレーションファイルを都度生成すること）。
+- `pnpm supabase db push` は行わず、必ずユーザーに手動で対応してもらうこと。
 
 ---
 
@@ -81,14 +81,12 @@
 4. 実装：
 
 - main ブランチにいることを確認し、`git checkut -b feature/`でブランチを切って対応してください。ブランチ名は対応Issue番号(例：feature/#10)の形にしてください
-- 実装後は、`pnpm run test`,`pnpm run build`, `pnpm run fmt`を実行して通ることを確認する（これ以外は基本実行しなくてよい）
 
-4. 実装完了後：
-   - テストを実行する
-   - UIの変更がある場合、Vercel Preview Deployでの動作確認結果（できればスクリーンショット）をPRに含める
+5. 実装完了後：
+   - `pnpm run test`,`pnpm run build`を実行して通ることを確認する（これ以外は基本実行しなくてよい、UIの確認はユーザーに委ねる）
    - `gh pr create` でPRを作成し、Issueにリンクする（`Closes #<issue番号>` を本文に含める）
    - Issueのラベルを `in-review` に付け替える
-5. マージは人間が行う。Claude Code自身でマージしない
+6. マージは人間が行う。Claude Code自身でマージしない
 
 ### 依存関係の扱い
 
@@ -99,8 +97,6 @@
 ## 7. レビュー観点（自己レビュー・PR作成前のチェックリスト）
 
 - `docs/requirements.md` の該当機能の受け入れ条件を満たしているか
-- コアコンセプト「積み上げの可視化」に沿っているか（例：ただ投稿できるだけでなく、蓄積・可視化の要素があるか）
-- Supabase RLSポリシーが適切に設定されているか
 - テストが書かれているか、既存テストを壊していないか
 - 不要なコンソールログ・デバッグコードが残っていないか
 
@@ -114,4 +110,4 @@
 ## 禁止事項
 
 - `main` ブランチへの直接コミットは禁止します
-- `package.json`の直接編集は禁止します（pnpm addコマンドで正規にインストールをしてください）
+- `package.json`の直接編集は禁止します（パッケージインストールはこちらで手動で行うため、対象パッケージの提示だけにとどめてください。）
