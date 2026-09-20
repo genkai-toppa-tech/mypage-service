@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { LikeButton } from "@/components/kanryo/LikeButton";
 import { UserAvatar } from "@/components/user/UserAvatar";
-import { formatOverrun, formatRemaining } from "@/lib/kanryo/format";
+import { formatDueTime, formatOverrun, formatRemaining } from "@/lib/kanryo/format";
 import { isLikedBy } from "@/lib/kanryo/likes";
 import { getTaskDisplayState } from "@/lib/kanryo/status";
 import type { KanryoTask, KanryoUser } from "@/lib/kanryo/types";
@@ -77,7 +77,7 @@ export function TaskCard({
 
           {displayState === "inProgress" && (
             <span className="text-muted-foreground text-xs tabular-nums">
-              残り {formatRemaining(task.dueAt, now)}
+              {formatDueTime(task.dueAt)}(残り: {formatRemaining(task.dueAt, now)})
             </span>
           )}
 

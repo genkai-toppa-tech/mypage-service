@@ -1,3 +1,15 @@
+const dueTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Asia/Tokyo",
+});
+
+/** 制限時刻を日本時間の "HH:mm" 形式にする。 */
+export function formatDueTime(dueAt: string): string {
+  return dueTimeFormatter.format(new Date(dueAt));
+}
+
 /**
  * 制限時間までの残り時間を "m:ss" 形式にする。
  * 期限を過ぎている場合は "0:00" を返す（表示側で「時間切れ」に出し分ける）。

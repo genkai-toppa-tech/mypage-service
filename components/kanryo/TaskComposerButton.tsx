@@ -8,12 +8,15 @@ type TaskComposerButtonProps = {
   onSubmit: (input: { body: string; dueMinutes: number }) => Promise<void>;
 };
 
-/** 画面右下に固定表示する投稿ボタン（FAB）。押下でモーダルを開く。 */
+/**
+ * 画面右下に固定表示する投稿ボタン（FAB）。押下でフルスクリーンの投稿画面を開く。
+ * PCビューでは投稿エリアを常時表示する（TaskComposerPanel）ため、モバイルビューのみで表示する。
+ */
 export function TaskComposerButton({ onSubmit }: TaskComposerButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <div className="md:hidden">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -24,6 +27,6 @@ export function TaskComposerButton({ onSubmit }: TaskComposerButtonProps) {
       </button>
 
       <TaskComposerDialog open={open} onOpenChange={setOpen} onSubmit={onSubmit} />
-    </>
+    </div>
   );
 }

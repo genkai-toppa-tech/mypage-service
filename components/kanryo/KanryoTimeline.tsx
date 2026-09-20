@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { TaskComposerButton } from "@/components/kanryo/TaskComposerButton";
+import { TaskComposerPanel } from "@/components/kanryo/TaskComposerPanel";
 import { TaskList } from "@/components/kanryo/TaskList";
 import type { Profile } from "@/lib/auth/types";
 import { addLike, isLikedBy, removeLike, type TaskLikes } from "@/lib/kanryo/likes";
@@ -225,6 +226,8 @@ export function KanryoTimeline({
 
   return (
     <div>
+      <TaskComposerPanel onSubmit={handleCreate} />
+
       <TaskList
         tasks={tasks}
         currentUserId={currentUser.id}
