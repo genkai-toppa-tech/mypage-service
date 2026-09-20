@@ -20,8 +20,14 @@
       "Bash(gh issue list *)",
       "Bash(gh issue view *)"
     ],
-    "ask": ["Bash(git push *)", "Bash(rm *)", "Bash(sudo *)"],
-    "deny": []
+    "ask": [
+      "Bash(git push *)",
+      "Bash(rm *)",
+      "Bash(sudo *)",
+      "Bash(rm -rf *)",
+      "Bash(sudo rm -rf *)"
+    ],
+    "deny": ["Bash(npm install)", "Bash(npm add *)", "Bash(pnpm supabase db push *)"]
   },
   "hooks": {
     "PostToolUse": [
